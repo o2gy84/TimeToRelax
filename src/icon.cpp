@@ -1,6 +1,7 @@
 #include <QDebug>
 
 #include <sstream>
+#include <string>
 
 #include "icon.h"
 
@@ -10,7 +11,16 @@ Icon::Icon(QObject *parent)
     m_SysTrayIcon->setIcon(QIcon(":/icons/main_1.png"));
     m_SysTrayIcon->setToolTip("time to work, time to relax :)");
     m_SysTrayIcon->show();
-    m_SysTrayIcon->showMessage("Time To Relax", "program is running. ver.0.0.1");
+
+    // TODO: to config!!!
+    m_TresholdMin = 60;
+    std::string version = "0.0.2";
+    std::stringstream s;
+    s << "program is running.";
+    s << " version: " << version << ".";
+    s << " treshold: " << m_TresholdMin << " min";
+
+    m_SysTrayIcon->showMessage("Time To Relax", s.str().c_str());
 
     QObject::connect(m_SysTrayIcon.get(), SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
                      this, SLOT(slotActivated(QSystemTrayIcon::ActivationReason)));
@@ -59,11 +69,8 @@ void Icon::slotTimerActivation()
     //QTime cur = QTime::currentTime();
     qDebug() << "timer activation. seconds elapsed: " << seconds_elapsed;
 
-    // TODO: to config!!!
-    int trashold_min = 1;
-    int trashold_sec = trashold_min * 60;
-
-    if (seconds_elapsed >= trashold_sec)
+    int treshold_sec = m_TresholdMin * 60;
+    if (seconds_elapsed >= treshold_sec)
     {
         std::stringstream s;
         s << "Хватит работать! Иди отдыхай!\n";

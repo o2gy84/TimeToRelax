@@ -34,6 +34,7 @@ private:
     std::shared_ptr<QTimer> m_Timer;
     int m_TimerIntervalMsec;
     QTime m_LastTimeout;
+    int m_TresholdMin;
 };
 
 #endif // MAINWINDOW_H
