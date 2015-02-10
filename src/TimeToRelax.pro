@@ -13,6 +13,12 @@ TEMPLATE = app
 
 CONFIG += static
 
+win32 {
+    RC_ICONS = ../resources/icons/app.ico
+}
+unix {
+}
+
 #static {
 #    CONFIG += static
 #    QTPLUGIN += qsqloci

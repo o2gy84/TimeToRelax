@@ -1,4 +1,5 @@
 #include <QDebug>
+#include <QMessageBox>
 
 #include <sstream>
 #include <string>
@@ -14,7 +15,7 @@ Icon::Icon(QObject *parent)
 
     // TODO: to config!!!
     m_TresholdMin = 60;
-    std::string version = "0.0.2";
+    std::string version = "0.0.3";
     std::stringstream s;
     s << "program is running.";
     s << " version: " << version << ".";
@@ -53,12 +54,41 @@ void Icon::setMenu(std::shared_ptr<ContextMenu> menu)
 
 void Icon::slotActivated(QSystemTrayIcon::ActivationReason reason)
 {
-    qDebug() << "activated. reason: " << reason;
+    if (reason == QSystemTrayIcon::DoubleClick)
+    {
+        int diff = m_LastTimeout.elapsed();
+        int seconds_elapsed = diff/1000;
+        int treshold_sec = m_TresholdMin * 60;
+        std::stringstream s;
+        if (seconds_elapsed < treshold_sec)
+        {
+            int sec = treshold_sec - seconds_elapsed;
+            s << "До релакса: " << sec/60 << " минут";
+            s << " (" << sec << " секунд) ";
+        }
+
+        std::shared_ptr<QMessageBox> mbox (new QMessageBox(NULL));
+        mbox->setText("Time To Relax");
+        mbox->setText(s.str().c_str());
+        //mbox->setDetailedText("detailed text");
+        //mbox->setInformativeText("informative text");
+        mbox->exec();
+    }
+    else
+    {
+        qDebug() << "activated. reason: " << reason;
+    }
 }
 
 void Icon::slotMessageClicked()
 {
     qDebug() << "message clicked";
+}
+
+void Icon::slotReset()
+{
+    qDebug() << "menu reset clicked";
+    m_LastTimeout.restart();
 }
 
 void Icon::slotTimerActivation()

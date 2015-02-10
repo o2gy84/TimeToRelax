@@ -13,7 +13,7 @@ public:
     virtual ~Config();
 
 public slots:
-    void show();
+    void slotShow();
 
 private:
 

@@ -24,6 +24,7 @@ public slots:
     void slotActivated(QSystemTrayIcon::ActivationReason reason);
     void slotMessageClicked();
     void slotTimerActivation();
+    void slotReset();
 
 protected:
 
