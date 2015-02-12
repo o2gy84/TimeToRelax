@@ -68,10 +68,9 @@ void Icon::slotActivated(QSystemTrayIcon::ActivationReason reason)
         }
 
         std::shared_ptr<QMessageBox> mbox (new QMessageBox(NULL));
-        mbox->setText("Time To Relax");
+        mbox->setWindowTitle("Time To Relax");
         mbox->setText(s.str().c_str());
-        //mbox->setDetailedText("detailed text");
-        //mbox->setInformativeText("informative text");
+        mbox->setWindowFlags(Qt::WindowStaysOnTopHint);
         mbox->exec();
     }
     else
