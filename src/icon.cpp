@@ -15,7 +15,7 @@ Icon::Icon(QObject *parent)
 
     // TODO: to config!!!
     m_TresholdMin = 60;
-    std::string version = "0.0.3";
+    std::string version = "0.0.4";
     std::stringstream s;
     s << "program is running.";
     s << " version: " << version << ".";
