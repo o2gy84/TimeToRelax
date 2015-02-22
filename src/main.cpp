@@ -1,8 +1,4 @@
-#include <QtPlugin>
-
 #include "app.h"
-
-//Q_IMPORT_PLUGIN(qsqloci)
 
 int main(int argc, char *argv[])
 {

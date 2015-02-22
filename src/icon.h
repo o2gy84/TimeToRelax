@@ -33,7 +33,6 @@ private:
 
     std::shared_ptr<QSystemTrayIcon> m_SysTrayIcon;
     std::shared_ptr<QTimer> m_Timer;
-    int m_TimerIntervalMsec;
     QTime m_LastTimeout;
     int m_TresholdMin;
 };

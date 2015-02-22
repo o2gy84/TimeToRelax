@@ -11,7 +11,6 @@ App::App(int argc, char *argv[])
 
     m_Config.reset(new Config(this));
     m_Icon.reset(new Icon(this));
-
     m_Menu.reset(new ContextMenu(this));
 
     QAction *configAction = new QAction("settings", this);

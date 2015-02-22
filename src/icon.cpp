@@ -15,7 +15,7 @@ Icon::Icon(QObject *parent)
 
     // TODO: to config!!!
     m_TresholdMin = 60;
-    std::string version = "0.0.4";
+    std::string version = "0.0.5";
     std::stringstream s;
     s << "program is running.";
     s << " version: " << version << ".";
@@ -33,11 +33,10 @@ Icon::Icon(QObject *parent)
     QObject::connect(m_Timer.get(), SIGNAL(timeout()),
                      this, SLOT(slotTimerActivation()));
 
-    // FIXME: дергаем таймер каждые 10 секунд
-    m_TimerIntervalMsec = 10000;
 
+    // FIXME: дергаем таймер каждые 10 секунд
     //timer->setInterval();
-    m_Timer->start(m_TimerIntervalMsec);
+    m_Timer->start(10000);
     m_LastTimeout.start();
 }
 
@@ -64,7 +63,6 @@ void Icon::slotActivated(QSystemTrayIcon::ActivationReason reason)
         {
             int sec = treshold_sec - seconds_elapsed;
             s << "До релакса: " << sec/60 << " минут";
-            s << " (" << sec << " секунд) ";
         }
 
         std::shared_ptr<QMessageBox> mbox (new QMessageBox(NULL));
@@ -104,7 +102,6 @@ void Icon::slotTimerActivation()
         std::stringstream s;
         s << "Хватит работать! Иди отдыхай!\n";
         s << "Прошли очередные " << seconds_elapsed/60 << "минут";
-        s << " (" << seconds_elapsed << " секунд)";
         m_SysTrayIcon->showMessage("Time To Relax", s.str().c_str());
         m_LastTimeout.restart();
     }
