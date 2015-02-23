@@ -1,62 +1,60 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include <QDialog>
 #include <QSettings>
+#include <QDialog>
+#include <QDateTime>
 
 #include <memory>
 
 typedef enum
 {
     EV_PERIODIC_TIMER,
-    EV_SINGLE_TIMER
+    EV_SINGLE_TIMER,
+    EV_NONE
 } event_t;
 
 typedef enum
 {
-    EV_MESSAGE_BOX,
-    EV_SYS_TRAY_MESSAGE,
-    EV_NONE
+    EV_MSG_MESSAGE_BOX,
+    EV_MSG_SYS_TRAY_MESSAGE,
+    EV_MSG_NONE
 } message_t;
 
-class EventOptions
+struct EventOptions
 {
 public:
-    explicit EventOptions() {}
-    ~EventOptions() {}
+    explicit EventOptions()
+    {
+        event_type = EV_NONE;
+        message_type = EV_MSG_NONE;
+        message = "default message";
+        name = "timer1";
+        timer_period_min = 60;
+        timer_timeout_date = QDateTime();
+    }
 
-    // GETERS
-    event_t getEvType() const { return m_EventType; }
-    message_t getMsgType() const { return m_MessageType; }
-    QString getMessage() const { return m_Message; }
-
-    // SETTERS
-    void setEvType(event_t ev) {m_EventType = ev;}
-    void setMsgType(message_t msg) {m_MessageType = msg;}
-    void setMessage(const QString &msg) {m_Message = msg;}
-
-private:
-    event_t m_EventType;
-    message_t m_MessageType;
-    QString m_Message;
+    event_t event_type;
+    message_t message_type;
+    QString message;
+    QString name;
+    int32_t timer_period_min;               // в минутах
+    QDateTime timer_timeout_date;
 };
 
 class Event
 {
 public:
-    explicit Event(const QString &_name, const EventOptions &_opt):
-        m_Name(_name),
+    explicit Event(const EventOptions &_opt):
         m_Options(_opt)
     {}
-
-    QString getName() const { return m_Name; }
-
+    EventOptions &getOpts() { return m_Options; }
+    const EventOptions &getOpts() const { return m_Options; }
 private:
-    QString m_Name;
     EventOptions m_Options;
 };
 
-class Config: public QDialog
+class Config: public QObject
 {
     Q_OBJECT
 
@@ -66,9 +64,20 @@ public:
     virtual ~Config();
 
 public slots:
-    void slotShow();
+    void slotShowConfigDialog();
+    void slotShowAddEventDialog();
+    void slotAddEventToConfig();
 
 private:
+    int initEvents();
+    void updateDialogEvents();
+
+private:
+
+    std::shared_ptr<QDialog> m_ConfigDialog;
+
+    std::shared_ptr<QDialog> m_AddEventDialog;
+    std::shared_ptr<Event> m_EventToAdd;
 
     std::shared_ptr<QSettings> m_Conf;
     std::vector<Event> m_Events;

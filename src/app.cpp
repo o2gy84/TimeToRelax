@@ -17,7 +17,7 @@ App::App(int argc, char *argv[])
     QAction *resetAction = new QAction("reset", this);
     QAction *quitAction = new QAction("quit", this);
 
-    QObject::connect(configAction, SIGNAL(triggered()), m_Config.get(), SLOT(slotShow()));
+    QObject::connect(configAction, SIGNAL(triggered()), m_Config.get(), SLOT(slotShowConfigDialog()));
     QObject::connect(resetAction, SIGNAL(triggered()), m_Icon.get(), SLOT(slotReset()));
     QObject::connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
 
