@@ -132,8 +132,8 @@ void Config::updateDialogEvents()
     QVBoxLayout *layout = new QVBoxLayout (m_ConfigDialog.get());
     layout->setAlignment(Qt::AlignTop);
 
-    QPushButton *button_add = new QPushButton ("+");
-    button_add->setMaximumWidth(30);
+    QPushButton *button_add = new QPushButton ("new event");
+    button_add->setMaximumWidth(70);
     QObject::connect(button_add, SIGNAL (clicked()), this, SLOT (slotShowAddEventDialog()));
 
     layout->addWidget(button_add);
@@ -141,19 +141,71 @@ void Config::updateDialogEvents()
     int i = 0;
     for (const auto &event : m_Events)
     {
-        ++i;
-        QLabel *label = new QLabel(event.getOpts().name);
+        QLabel *label1 = new QLabel("Имя: " + event.getOpts().name);
+        QLabel *label_msg = new QLabel("Сообщение: " + event.getOpts().message);
 
-        QHBoxLayout *group_box_layout = new QHBoxLayout();
-        group_box_layout->addWidget(label);
+        QVBoxLayout *vbox_layout = new QVBoxLayout ();
+        vbox_layout->addWidget(label1);
+        vbox_layout->addWidget(label_msg);
 
-        QGroupBox *group_box = new QGroupBox ("event: " + QString::number(i));
+        if (event.getOpts().message_type == EV_MSG_MESSAGE_BOX)
+        {
+            QLabel *msg_type_label = new QLabel("Тип сообщения: message box");
+            vbox_layout->addWidget(msg_type_label);
+        }
+        else if (event.getOpts().message_type == EV_MSG_SYS_TRAY_MESSAGE)
+        {
+            QLabel *msg_type_label = new QLabel("Тип сообщения: область уведомлений");
+            vbox_layout->addWidget(msg_type_label);
+        }
+        else
+        {
+            qDebug() << "config error";
+            continue;
+        }
+
+        if (event.getOpts().event_type == EV_PERIODIC_TIMER)
+        {
+            QLabel *label2 = new QLabel("Тип: периодический");
+            QString info = "Частота: раз в ";
+            info += QString::number(event.getOpts().timer_period_min);
+            info += " минут";
+            QLabel *label3 = new QLabel(info);
+            vbox_layout->addWidget(label2);
+            vbox_layout->addWidget(label3);
+        }
+        else if (event.getOpts().event_type == EV_SINGLE_TIMER)
+        {
+            QLabel *label2 = new QLabel("Тип: однократный");
+            QString info = "Срабатывание: " + event.getOpts().timer_timeout_date.toString();
+            QLabel *label3 = new QLabel(info);
+            vbox_layout->addWidget(label2);
+            vbox_layout->addWidget(label3);
+        }
+        else
+        {
+            qDebug() << "config error";
+            continue;
+        }
+
+        QPushButton *edit = new QPushButton ("edit");
+        edit->setMaximumWidth(50);
+        QPushButton *del = new QPushButton ("delete");
+        del->setMaximumWidth(50);
+
+        QGridLayout *group_box_layout = new QGridLayout();
+        group_box_layout->addLayout(vbox_layout, i, 0);
+        group_box_layout->addWidget(edit, i, 1);
+        group_box_layout->addWidget(del, i, 2);
+
+        QGroupBox *group_box = new QGroupBox ("event: " + QString::number(i+1));
         group_box->setFlat(false);
-        group_box->setMaximumHeight(100);
+        group_box->setMaximumHeight(150);
 
         group_box->setLayout(group_box_layout);
 
         layout->addWidget(group_box);
+        ++i;
     }
 
     m_ConfigDialog->setLayout(layout);
@@ -316,6 +368,11 @@ void Config::slotAddEventToConfig()
         m_Events.push_back(*ev);        // copy
         save_events(m_Conf, m_Events);
         need_update_config = true;
+
+        EventOptions opts = ev->getOpts();
+        qDebug() << "save event. name: " << opts.name
+                    << "message: " << opts.message
+                    << "datetime: " << opts.timer_timeout_date;
     }
 
     m_AddEventDialog.reset();
