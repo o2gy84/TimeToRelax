@@ -12,6 +12,7 @@
 #include <QButtonGroup>
 #include <QStackedWidget>
 #include <QMessageBox>
+#include <QScrollArea>
 
 #include "config.h"
 
@@ -123,25 +124,8 @@ void Config::updateDialogEvents()
  * на основе списка событий m_Events.
  */
 {
-    QSize size (400, 400);
-    const QRect screen = QApplication::desktop()->screenGeometry();
-
-    int left_x = screen.width() / 2 - size.width() / 2;
-    int left_y = screen.height() / 2 - size.height() / 2;
-
-    QPoint left_top(left_x, left_y);
-    QRect dialog_geometry (left_top, size);
-
-    m_ConfigDialog->setGeometry(dialog_geometry);
-
-    QVBoxLayout *layout = new QVBoxLayout (m_ConfigDialog.get());
+    QVBoxLayout *layout = new QVBoxLayout ( /*m_ConfigDialog.get()*/ );
     layout->setAlignment(Qt::AlignTop);
-
-    QPushButton *button_add = new QPushButton ("new event");
-    button_add->setMaximumWidth(70);
-    QObject::connect(button_add, SIGNAL (clicked()), this, SLOT (slotShowAddEventDialog()));
-
-    layout->addWidget(button_add);
 
     int i = 0;
     for (const auto &event : m_Events)
@@ -213,7 +197,22 @@ void Config::updateDialogEvents()
         ++i;
     }
 
-    m_ConfigDialog->setLayout(layout);
+    QVBoxLayout *top_layout = new QVBoxLayout(m_ConfigDialog.get());
+    {
+        QPushButton *button_add = new QPushButton ("new event");
+        button_add->setMaximumWidth(70);
+        QObject::connect(button_add, SIGNAL (clicked()), this, SLOT (slotShowAddEventDialog()));
+
+        QWidget *widget = new QWidget();
+        widget->setLayout(layout);
+        QScrollArea *scrollarea = new QScrollArea();
+        scrollarea->setWidget(widget);
+
+        top_layout->addWidget(button_add);
+        top_layout->addWidget(scrollarea);
+    }
+
+    m_ConfigDialog->setLayout(top_layout);
 }
 
 void Config::slotShowConfigDialog()
@@ -225,8 +224,22 @@ void Config::slotShowConfigDialog()
 {
     // destroy prev dialog
     m_ConfigDialog.reset(new QDialog());
+
+    QSize size (400, 400);
+    const QRect screen = QApplication::desktop()->screenGeometry();
+
+    int left_x = screen.width() / 2 - size.width() / 2;
+    int left_y = screen.height() / 2 - size.height() / 2;
+
+    QPoint left_top(left_x, left_y);
+    QRect dialog_geometry (left_top, size);
+
+    m_ConfigDialog->setGeometry(dialog_geometry);
+
     updateDialogEvents();
+
     m_ConfigDialog->show();
+    m_ConfigDialog->setFixedWidth(m_ConfigDialog->width());
 }
 
 void Config::slotShowAddEventDialog()
