@@ -22,6 +22,7 @@
 #define CONF_TIMER_PERIOD "tperiod"
 #define CONF_TIMER_TIMEOUT_DATE "tdate"
 
+
 static
 void save_events(std::shared_ptr<QSettings> conf, const std::vector<Event> &events)
 {
@@ -57,9 +58,6 @@ Config::Config(QObject *parent)
         EventOptions opt;
         opt.event_type = EV_PERIODIC_TIMER;
         opt.message_type = EV_MSG_SYS_TRAY_MESSAGE;
-        opt.timer_period_min = 60;
-        opt.message = "default message";
-        opt.name = "default event";
         Event event(opt);
         m_Events.push_back(event);
         save_events(m_Conf, m_Events);
@@ -73,6 +71,10 @@ Config::~Config()
 
 // private
 int Config::initEvents()
+/*
+ * Читаем настройки из конфига
+ *
+ */
 {
 #if defined Q_OS_WIN
     m_Conf.reset(new QSettings(QSettings::IniFormat, QSettings::UserScope, "o2gy", "TimeToRelax"));
@@ -105,7 +107,10 @@ int Config::initEvents()
         opt.timer_period_min = m_Conf->value(CONF_TIMER_PERIOD).toInt();
         opt.timer_timeout_date = m_Conf->value(CONF_TIMER_TIMEOUT_DATE).toDateTime() ;
         Event event(opt);
-        m_Events.push_back(event);
+
+        // just in case
+        if (opt.event_type != EV_NONE && opt.message_type != EV_MSG_NONE)
+            m_Events.push_back(event);
     }
     m_Conf->endArray();
     return size;
@@ -232,6 +237,12 @@ void Config::slotShowAddEventDialog()
     qDebug() << "add event dialog";
 
     EventOptions opts;
+
+    // some default values
+    {
+        opts.timer_timeout_date = QDateTime::currentDateTime();
+        opts.name = "таймер: " + QString::number(m_Events.size());
+    }
     m_EventToAdd.reset(new Event(opts));
 
     m_AddEventDialog.reset(new QDialog());
@@ -248,14 +259,14 @@ void Config::slotShowAddEventDialog()
     m_AddEventDialog->setGeometry(dialog_geometry);
 
     QLineEdit *name_edit = new QLineEdit();
-    name_edit->setText("таймер: " + QString::number(m_Events.size()));
+    name_edit->setText(opts.name);
     QObject::connect(name_edit, &QLineEdit::editingFinished, [name_edit, this]()
     {
         m_EventToAdd->getOpts().name = name_edit->text();
     });
 
     QLineEdit *text_edit = new QLineEdit();
-    text_edit->setText("time to relax, bro :)");
+    text_edit->setText(opts.message);
     QObject::connect(text_edit, &QLineEdit::editingFinished, [text_edit, this]()
     {
         m_EventToAdd->getOpts().message = text_edit->text();
@@ -267,7 +278,7 @@ void Config::slotShowAddEventDialog()
         {
             QLineEdit *mins_edit = new QLineEdit();
             mins_edit->setMaximumWidth(40);
-            mins_edit->setText("60");
+            mins_edit->setText(QString::number(opts.timer_period_min));
             QObject::connect(mins_edit, &QLineEdit::editingFinished, [mins_edit, this]()
             {
                 m_EventToAdd->getOpts().timer_period_min = mins_edit->text().toInt();
@@ -275,7 +286,7 @@ void Config::slotShowAddEventDialog()
 
             QDateTimeEdit *date_time_edit = new QDateTimeEdit();
             date_time_edit->setMaximumWidth(180);
-            date_time_edit->setMinimumDateTime(QDateTime::currentDateTime());
+            date_time_edit->setMinimumDateTime(opts.timer_timeout_date);
             date_time_edit->setCalendarPopup(true);
             QObject::connect(date_time_edit, &QDateTimeEdit::editingFinished, [date_time_edit, this]()
             {

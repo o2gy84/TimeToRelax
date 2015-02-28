@@ -7,6 +7,10 @@
 
 #include <memory>
 
+#define DEFAULT_MSG             "Hey, it's time to Relax :)"
+#define DEFAULT_EVENT_NAME      "Обычный таймер"
+#define DEFAULT_TIMER_PERIOD    60
+
 typedef enum
 {
     EV_PERIODIC_TIMER,
@@ -28,9 +32,9 @@ public:
     {
         event_type = EV_NONE;
         message_type = EV_MSG_NONE;
-        message = "default message";
-        name = "timer1";
-        timer_period_min = 60;
+        message = DEFAULT_MSG;
+        name = DEFAULT_EVENT_NAME;
+        timer_period_min = DEFAULT_TIMER_PERIOD;
         timer_timeout_date = QDateTime();
     }
 
