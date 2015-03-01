@@ -23,6 +23,9 @@
 #define CONF_TIMER_PERIOD "tperiod"
 #define CONF_TIMER_TIMEOUT_DATE "tdate"
 
+#define CONF_GROUP_EVENTS "events"
+#define CONF_GROUP_COMMON "common"
+
 
 static
 void save_events(std::shared_ptr<QSettings> conf, const std::vector<Event> &events)
@@ -30,7 +33,7 @@ void save_events(std::shared_ptr<QSettings> conf, const std::vector<Event> &even
     for (unsigned i = 0; i < events.size(); ++i)
     {
         EventOptions opt = events[i].getOpts();
-        conf->beginWriteArray("events");
+        conf->beginWriteArray(CONF_GROUP_EVENTS);
         conf->setArrayIndex(i);
         conf->setValue(CONF_EVENT_TYPE, opt.event_type);
         conf->setValue(CONF_MSG_TYPE, opt.message_type);
@@ -90,12 +93,12 @@ int Config::initEvents()
 
     m_Events.clear();
 
-    m_Conf->beginGroup("common");
+    m_Conf->beginGroup(CONF_GROUP_COMMON);
     m_Conf->setValue("message", "just message");
     m_Conf->setValue("sound", 0);
     m_Conf->endGroup();
 
-    int size = m_Conf->beginReadArray("events");
+    int size = m_Conf->beginReadArray(CONF_GROUP_EVENTS);
     for (int i = 0; i < size; ++i)
     {
         qDebug() << "read: " << i+1 << "event";
@@ -178,8 +181,16 @@ void Config::updateDialogEvents()
         }
 
         QPushButton *edit = new QPushButton ("edit");
-        edit->setMaximumWidth(50);
+
+
         QPushButton *del = new QPushButton ("delete");
+        QObject::connect(del, &QPushButton::clicked, [i, this]()
+            {
+                deleteEvent(i);
+            }
+        );
+
+        edit->setMaximumWidth(50);
         del->setMaximumWidth(50);
 
         QGridLayout *group_box_layout = new QGridLayout();
@@ -404,4 +415,27 @@ void Config::slotAddEventToConfig()
     {
         slotShowConfigDialog();
     }
+}
+
+void Config::deleteEvent(int num)
+{
+    std::shared_ptr<QMessageBox> mbox (new QMessageBox(NULL));
+    mbox->setWindowTitle("Time To Relax");
+    mbox->setText("Delete event?");
+    mbox->setWindowFlags(Qt::WindowStaysOnTopHint);
+    mbox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    mbox->setDefaultButton(QMessageBox::No);
+
+    if (mbox->exec() == QMessageBox::No)
+        return;
+
+    m_Events.erase(m_Events.begin() + num);
+
+    m_Conf->beginGroup(CONF_GROUP_EVENTS);
+    m_Conf->remove("");
+    m_Conf->endGroup();
+
+    save_events(m_Conf, m_Events);
+
+    slotShowConfigDialog();
 }

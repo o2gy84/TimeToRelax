@@ -75,6 +75,7 @@ public slots:
 private:
     int initEvents();
     void updateDialogEvents();
+    void deleteEvent(int num);
 
 private:
 
