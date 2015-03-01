@@ -181,6 +181,11 @@ void Config::updateDialogEvents()
         }
 
         QPushButton *edit = new QPushButton ("edit");
+        QObject::connect(edit, &QPushButton::clicked, [i, this]()
+            {
+                slotShowEditEventDialog(i);
+            }
+        );
 
 
         QPushButton *del = new QPushButton ("delete");
@@ -269,8 +274,38 @@ void Config::slotShowAddEventDialog()
     }
     m_EventToAdd.reset(new Event(opts));
 
-    m_AddEventDialog.reset(new QDialog());
-    m_AddEventDialog->setWindowTitle("add new event");
+    ev_manager_cb_t f = &Config::addEvent;
+    showEventManagerDialog("add new event", m_EventToAdd, f, -1);
+}
+
+void Config::slotShowEditEventDialog(int num)
+/*
+ *  Показать диалог редактирования ивента.
+ */
+{
+    qDebug() << "edit event dialog";
+
+    if ((unsigned)num >= m_Events.size())
+        throw std::runtime_error("fatal error: to large edit event number");
+
+    EventOptions opts = m_Events[num].getOpts();
+    m_EventToAdd.reset(new Event(opts));
+
+    ev_manager_cb_t f = &Config::editEvent;
+    showEventManagerDialog("edit event", m_EventToAdd, f, num);
+}
+
+// private
+void Config::showEventManagerDialog(const QString &title, std::shared_ptr<Event> ev,
+                                    ev_manager_cb_t callback, int cb_param)
+/*
+ *  Реализация.
+ *  Показ диалога для редактирования ивента или
+ *  добавления нового ивента.
+ */
+{
+    m_EventManagerDialog.reset(new QDialog());
+    m_EventManagerDialog->setWindowTitle(title);
 
     QSize size (600, 200);
     const QRect screen = QApplication::desktop()->screenGeometry();
@@ -280,7 +315,9 @@ void Config::slotShowAddEventDialog()
 
     QPoint left_top(left_x, left_y);
     QRect dialog_geometry (left_top, size);
-    m_AddEventDialog->setGeometry(dialog_geometry);
+    m_EventManagerDialog->setGeometry(dialog_geometry);
+
+    EventOptions opts = ev->getOpts();
 
     QLineEdit *name_edit = new QLineEdit();
     name_edit->setText(opts.name);
@@ -324,6 +361,11 @@ void Config::slotShowAddEventDialog()
         QRadioButton *rb1 = new QRadioButton("Периодический таймер (введите периодичность срабатывания в минутах)");
         QRadioButton *rb2 = new QRadioButton("Однократный таймер (введите дату срабатывания)");
 
+        if (opts.event_type == EV_PERIODIC_TIMER)
+            rb1->setChecked(true);
+        else if (opts.event_type == EV_SINGLE_TIMER)
+            rb2->setChecked(true);
+
         QObject::connect(rb1, &QRadioButton::clicked, [stacked_widget, this]() {
                 stacked_widget->setCurrentIndex(0);
                 m_EventToAdd->getOpts().event_type = EV_PERIODIC_TIMER;
@@ -346,6 +388,11 @@ void Config::slotShowAddEventDialog()
         QRadioButton *rb1 = new QRadioButton("System tray message");
         QRadioButton *rb2 = new QRadioButton("Windows message");
 
+        if (opts.message_type == EV_MSG_SYS_TRAY_MESSAGE)
+            rb1->setChecked(true);
+        else if (opts.message_type == EV_MSG_MESSAGE_BOX)
+            rb2->setChecked(true);
+
         QObject::connect(rb1, &QRadioButton::toggled, [this]() {
                 m_EventToAdd->getOpts().message_type = EV_MSG_SYS_TRAY_MESSAGE;
             });
@@ -362,10 +409,14 @@ void Config::slotShowAddEventDialog()
     QPushButton *button_add = new QPushButton ("+");
     {
         button_add->setMaximumWidth(30);
-        QObject::connect(button_add, SIGNAL (clicked()), this, SLOT (slotAddEventToConfig()));
+        QObject::connect(button_add, &QPushButton::clicked, [this, callback, cb_param]()
+            {
+                (this->*callback)(cb_param);
+            }
+        );
     }
 
-    QFormLayout *layout = new QFormLayout (m_AddEventDialog.get());
+    QFormLayout *layout = new QFormLayout (m_EventManagerDialog.get());
     layout->setAlignment(Qt::AlignTop);
 
     layout->addRow("имя события", name_edit);
@@ -374,16 +425,18 @@ void Config::slotShowAddEventDialog()
     layout->addRow("тип сообщения", gbox2);
     layout->addRow("готово!", button_add);
 
-    m_AddEventDialog->show();
+    m_EventManagerDialog->show();
 }
 
-void Config::slotAddEventToConfig()
+void Config::addEvent(int num)
 /*
  * Юзер создал новый ивент и кликнул "сохранить".
  * Необходимо дописать новый ивент в конфиг и перезагрузить
  * диалог со списком всех ивентов.
  */
 {
+    (void)num;  // UNUSED. при добавлении нового ивента сюда параметром приходит -1
+
     qDebug() << "need add event to config";
     bool need_update_config = false;
 
@@ -410,14 +463,43 @@ void Config::slotAddEventToConfig()
                     << "datetime: " << opts.timer_timeout_date;
     }
 
-    m_AddEventDialog.reset();
+    m_EventManagerDialog.reset();
     if (need_update_config)
     {
         slotShowConfigDialog();
     }
 }
 
+void Config::editEvent(int num)
+/*
+ * Отредактировали i-ый ивент и нажали кнопку "готово"
+ *
+ * По идее, сюда не может "прилететь" невалидный
+ *  ивент, так как он валидировался при добавлении.
+ *  Однако, возможно, все же стоит добавить проверку.
+ */
+{
+    qDebug() << "need edit event: " << num;
+
+    Event *ev = m_EventToAdd.get();
+    m_Events[num] = *ev;
+    save_events(m_Conf, m_Events);
+
+    EventOptions opts = ev->getOpts();
+    qDebug() << "edit event. new name: " << opts.name
+                << "new message: " << opts.message
+                << "new datetime: " << opts.timer_timeout_date;
+
+    m_EventManagerDialog.reset();
+
+    slotShowConfigDialog();
+}
+
 void Config::deleteEvent(int num)
+/*
+ *  Функция вызывается при нажатии
+ *  на кнопку "delete".
+ */
 {
     std::shared_ptr<QMessageBox> mbox (new QMessageBox(NULL));
     mbox->setWindowTitle("Time To Relax");

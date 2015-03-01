@@ -63,30 +63,36 @@ class Config: public QObject
     Q_OBJECT
 
 public:
+    typedef void (Config::*ev_manager_cb_t)(int);
+
+public:
 
     Config(QObject *parent);
     virtual ~Config();
 
 public slots:
-    void slotShowConfigDialog();
-    void slotShowAddEventDialog();
-    void slotAddEventToConfig();
+    void slotShowConfigDialog();                // click context_menu->settings
+    void slotShowAddEventDialog();              // click menu->settings->add
+    void slotShowEditEventDialog(int num);      // click menu->settings->edit
 
 private:
     int initEvents();
     void updateDialogEvents();
+    void showEventManagerDialog(const QString &title, std::shared_ptr<Event> ev,
+                                ev_manager_cb_t cb, int cb_param);
     void deleteEvent(int num);
+    void addEvent(int num);
+    void editEvent(int num);
 
 private:
 
     std::shared_ptr<QDialog> m_ConfigDialog;
 
-    std::shared_ptr<QDialog> m_AddEventDialog;
+    std::shared_ptr<QDialog> m_EventManagerDialog;
     std::shared_ptr<Event> m_EventToAdd;
 
     std::shared_ptr<QSettings> m_Conf;
     std::vector<Event> m_Events;
 };
-
 
 #endif // CONFIG_H
