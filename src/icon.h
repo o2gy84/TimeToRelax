@@ -1,5 +1,5 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef ICON_H
+#define ICON_H
 
 #include <QSystemTrayIcon>
 #include <QObject>
@@ -9,6 +9,7 @@
 #include <memory>
 
 #include "context_menu.h"
+#include "config.h"
 
 class Icon: public QObject
 {
@@ -19,6 +20,7 @@ public:
     ~Icon();
 
     void setMenu(std::shared_ptr<ContextMenu> menu);
+    void setConfig(std::shared_ptr<Config> conf) { m_Config = conf; }
 
 public slots:
     void slotActivated(QSystemTrayIcon::ActivationReason reason);
@@ -28,13 +30,14 @@ public slots:
 
 protected:
 
+private:
+    void showUserMessage(const EventOptions& opt);
 
 private:
 
     std::shared_ptr<QSystemTrayIcon> m_SysTrayIcon;
     std::shared_ptr<QTimer> m_Timer;
-    QTime m_LastTimeout;
-    int m_TresholdMin;
+    std::shared_ptr<Config> m_Config;           // app config
 };
 
-#endif // MAINWINDOW_H
+#endif // ICON_H

@@ -347,7 +347,7 @@ void Config::showEventManagerDialog(const QString &title, std::shared_ptr<Event>
 
             QDateTimeEdit *date_time_edit = new QDateTimeEdit();
             date_time_edit->setMaximumWidth(180);
-            date_time_edit->setMinimumDateTime(opts.timer_timeout_date);
+            date_time_edit->setMinimumDateTime(QDateTime::currentDateTime());
             date_time_edit->setCalendarPopup(true);
             QObject::connect(date_time_edit, &QDateTimeEdit::editingFinished, [date_time_edit, this]()
             {
@@ -520,4 +520,26 @@ void Config::deleteEvent(int num)
     save_events(m_Conf, m_Events);
 
     slotShowConfigDialog();
+}
+
+void Config::deleteProcessedEvent(int num)
+/*
+ * Функция вызывается для удаления уже
+ * обработанных событий.
+ *
+ * Внешние итераторы станут невалидны!
+ *
+ */
+{
+    Event ev = m_Events.at(num);
+    if (ev.getOpts().event_type != EV_SINGLE_TIMER)
+        return;
+
+    m_Events.erase(m_Events.begin() + num);
+
+    m_Conf->beginGroup(CONF_GROUP_EVENTS);
+    m_Conf->remove("");
+    m_Conf->endGroup();
+
+    save_events(m_Conf, m_Events);
 }

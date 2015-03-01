@@ -36,6 +36,9 @@ public:
         name = DEFAULT_EVENT_NAME;
         timer_period_min = DEFAULT_TIMER_PERIOD;
         timer_timeout_date = QDateTime();
+
+        // service field, not for user
+        last_activation = QDateTime::fromTime_t(0);
     }
 
     event_t event_type;
@@ -44,6 +47,9 @@ public:
     QString name;
     int32_t timer_period_min;               // в минутах
     QDateTime timer_timeout_date;
+
+    // service field, not for user
+    QDateTime last_activation;
 };
 
 class Event
@@ -54,6 +60,9 @@ public:
     {}
     EventOptions &getOpts() { return m_Options; }
     const EventOptions &getOpts() const { return m_Options; }
+
+    void updateLastActivation(const QDateTime &d) { m_Options.last_activation = d; }
+
 private:
     EventOptions m_Options;
 };
@@ -70,7 +79,8 @@ public:
     Config(QObject *parent);
     virtual ~Config();
 
-    const std::vector<Event> &events() const { return m_Events; }
+    std::vector<Event> &events() { return m_Events; }
+    void deleteProcessedEvent(int num);
 
 public slots:
     void slotShowConfigDialog();                // click context_menu->settings

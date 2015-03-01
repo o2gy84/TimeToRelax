@@ -2,6 +2,7 @@
 #include <QAction>
 
 #include "app.h"
+#include "config.h"
 
 
 App::App(int argc, char *argv[])
@@ -9,7 +10,7 @@ App::App(int argc, char *argv[])
 {
     qDebug() << "start app";
 
-    m_Config.reset(new Config(this));
+    std::shared_ptr<Config> config(new Config(this));
     m_Icon.reset(new Icon(this));
     m_Menu.reset(new ContextMenu(this));
 
@@ -17,7 +18,7 @@ App::App(int argc, char *argv[])
     QAction *resetAction = new QAction("reset", this);
     QAction *quitAction = new QAction("quit", this);
 
-    QObject::connect(configAction, SIGNAL(triggered()), m_Config.get(), SLOT(slotShowConfigDialog()));
+    QObject::connect(configAction, SIGNAL(triggered()), config.get(), SLOT(slotShowConfigDialog()));
     QObject::connect(resetAction, SIGNAL(triggered()), m_Icon.get(), SLOT(slotReset()));
     QObject::connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
 
@@ -26,6 +27,7 @@ App::App(int argc, char *argv[])
     m_Menu->addAction(quitAction);
 
     m_Icon->setMenu(m_Menu);
+    m_Icon->setConfig(config);
 
     setQuitOnLastWindowClosed(false);
 }
