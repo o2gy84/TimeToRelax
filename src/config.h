@@ -70,6 +70,8 @@ public:
     Config(QObject *parent);
     virtual ~Config();
 
+    const std::vector<Event> &events() const { return m_Events; }
+
 public slots:
     void slotShowConfigDialog();                // click context_menu->settings
     void slotShowAddEventDialog();              // click menu->settings->add
