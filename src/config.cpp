@@ -335,6 +335,8 @@ void Config::showEventManagerDialog(const QString &title, std::shared_ptr<Event>
 
     QGroupBox *gbox1 = new QGroupBox();
     {
+        bool is_single_timer = m_EventToAdd->getOpts().event_type == EV_SINGLE_TIMER;
+
         QStackedWidget *stacked_widget = new QStackedWidget();
         {
             QLineEdit *mins_edit = new QLineEdit();
@@ -354,8 +356,16 @@ void Config::showEventManagerDialog(const QString &title, std::shared_ptr<Event>
                 m_EventToAdd->getOpts().timer_timeout_date = date_time_edit->dateTime();
             });
 
-            stacked_widget->addWidget(mins_edit);
-            stacked_widget->addWidget(date_time_edit);
+            if (is_single_timer)
+            {
+                stacked_widget->addWidget(date_time_edit);
+                stacked_widget->addWidget(mins_edit);
+            }
+            else
+            {
+                stacked_widget->addWidget(mins_edit);
+                stacked_widget->addWidget(date_time_edit);
+            }
         }
 
         QRadioButton *rb1 = new QRadioButton("Периодический таймер (введите периодичность срабатывания в минутах)");
@@ -366,13 +376,19 @@ void Config::showEventManagerDialog(const QString &title, std::shared_ptr<Event>
         else if (opts.event_type == EV_SINGLE_TIMER)
             rb2->setChecked(true);
 
-        QObject::connect(rb1, &QRadioButton::clicked, [stacked_widget, this]() {
-                stacked_widget->setCurrentIndex(0);
+        QObject::connect(rb1, &QRadioButton::clicked, [is_single_timer, stacked_widget, this]() {
+                if (is_single_timer)
+                    stacked_widget->setCurrentIndex(1);
+                else
+                    stacked_widget->setCurrentIndex(0);
                 m_EventToAdd->getOpts().event_type = EV_PERIODIC_TIMER;
             });
 
-        QObject::connect(rb2, &QRadioButton::clicked, [stacked_widget, this]() {
-                stacked_widget->setCurrentIndex(1);
+        QObject::connect(rb2, &QRadioButton::clicked, [is_single_timer, stacked_widget, this]() {
+                if (is_single_timer)
+                    stacked_widget->setCurrentIndex(0);
+                else
+                    stacked_widget->setCurrentIndex(1);
                 m_EventToAdd->getOpts().event_type = EV_SINGLE_TIMER;
             });
 
