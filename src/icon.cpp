@@ -6,7 +6,7 @@
 
 #include "icon.h"
 
-#define VERSION         "1.0.0"
+#define VERSION         "1.0.1"
 #define ICON_TOOLTIP    "time to work, time to relax :)"
 
 Icon::Icon(QObject *parent)
