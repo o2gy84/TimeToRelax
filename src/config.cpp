@@ -347,9 +347,9 @@ void Config::showEventManagerDialog(const QString &title, std::shared_ptr<Event>
                 m_EventToAdd->getOpts().timer_period_min = mins_edit->text().toInt();
             });
 
-            QDateTimeEdit *date_time_edit = new QDateTimeEdit();
-            date_time_edit->setMaximumWidth(180);
+            QDateTimeEdit *date_time_edit = new QDateTimeEdit(m_EventToAdd->getOpts().timer_timeout_date);
             date_time_edit->setMinimumDateTime(QDateTime::currentDateTime());
+            date_time_edit->setMaximumWidth(180);
             date_time_edit->setCalendarPopup(true);
             QObject::connect(date_time_edit, &QDateTimeEdit::editingFinished, [date_time_edit, this]()
             {
