@@ -11,6 +11,8 @@
 #define DEFAULT_EVENT_NAME      "Обычный таймер"
 #define DEFAULT_TIMER_PERIOD    60
 
+#define INFO_WINDOW_TITLE       "Time To Relax"
+
 typedef enum
 {
     EV_PERIODIC_TIMER,

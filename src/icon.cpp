@@ -6,21 +6,22 @@
 
 #include "icon.h"
 
-#define VERSION "1.0.0"
+#define VERSION         "1.0.0"
+#define ICON_TOOLTIP    "time to work, time to relax :)"
 
 Icon::Icon(QObject *parent)
 {
     m_SysTrayIcon.reset(new QSystemTrayIcon(parent));
     m_SysTrayIcon->setIcon(QIcon(":/icons/main_1.png"));
-    m_SysTrayIcon->setToolTip("time to work, time to relax :)");
+    m_SysTrayIcon->setToolTip(ICON_TOOLTIP);
     m_SysTrayIcon->show();
 
     std::string version = VERSION;
     std::stringstream s;
-    s << "program is running.";
-    s << " version: " << version;
+    s << "Running version: " << version;
 
-    m_SysTrayIcon->showMessage("Time To Relax", s.str().c_str());
+    m_SysTrayIcon->showMessage(INFO_WINDOW_TITLE, s.str().c_str(),
+                                     QSystemTrayIcon::NoIcon, /*msec*/1000);
 
     QObject::connect(m_SysTrayIcon.get(), SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
                      this, SLOT(slotActivated(QSystemTrayIcon::ActivationReason)));
@@ -49,32 +50,41 @@ void Icon::setMenu(std::shared_ptr<ContextMenu> menu)
 }
 
 void Icon::slotActivated(QSystemTrayIcon::ActivationReason reason)
+/*
+ * Функция вызывается по двойному клику в иконку приложения.
+ * Для каждого таймера выводит время, оставшееся до срабатывания.
+ *
+ */
 {
     if (reason == QSystemTrayIcon::DoubleClick)
     {
         std::stringstream s;
-        s << "Время до срабатывания:\t\t\t\t\n";
+        s << "<b>Время до срабатывания:</b> <br />";
+        s << "<table>";
 
         QDateTime cur_time = QDateTime::currentDateTime();
 
         std::vector<Event> &events = m_Config->events();
         for (unsigned i = 0; i < events.size(); ++i)
         {
+            s << "<tr>";
             EventOptions opt = events[i].getOpts();
-            s << opt.name.toStdString() << ":\t\t";
+            s << "<td>" << opt.name.toStdString() << ":</td>";
+
+            s << "<td>&nbsp;&nbsp;&nbsp;&nbsp;</td>";
 
             if (opt.event_type == EV_PERIODIC_TIMER)
             {
                 if (0 == opt.last_activation.toTime_t())
                 {
-                    s << opt.timer_period_min << " минут\n";
+                    s << "<td>" << opt.timer_period_min << " минут</td>";
                 }
                 else
                 {
                     qint64 msec_diff = cur_time.toMSecsSinceEpoch() - opt.last_activation.toMSecsSinceEpoch();
                     int seconds_elapsed = msec_diff/1000;
                     int minuts_elapsed = seconds_elapsed/60;
-                    s << opt.timer_period_min - minuts_elapsed << " минут\n";
+                    s << "<td>" << opt.timer_period_min - minuts_elapsed << " минут</td>";
                 }
             }
             else if (opt.event_type == EV_SINGLE_TIMER)
@@ -84,13 +94,16 @@ void Icon::slotActivated(QSystemTrayIcon::ActivationReason reason)
                 {
                     int val = cur_time.secsTo(opt.timer_timeout_date)/60;
                     if (val == 0) val = 1;
-                    s << val << " минут\n";
+                    s << "<td>" << val << " минут</td>";
                 }
             }
+            s << "</tr>";
         }
 
+        s << "</table>";
+
         std::shared_ptr<QMessageBox> mbox (new QMessageBox(NULL));
-        mbox->setWindowTitle("Time To Relax");
+        mbox->setWindowTitle(INFO_WINDOW_TITLE);
         mbox->setText(s.str().c_str());
         mbox->setWindowFlags(Qt::WindowStaysOnTopHint);
         mbox->exec();
@@ -102,11 +115,21 @@ void Icon::slotActivated(QSystemTrayIcon::ActivationReason reason)
 }
 
 void Icon::slotMessageClicked()
+/*
+ * Пока не используется.
+ * Вызывается по клику в сообщение, выводимое
+ * иконкой в системном трее.
+ *
+ */
 {
     qDebug() << "message clicked";
 }
 
 void Icon::slotReset()
+/*
+ * "Сброс" всех периодических таймеров
+ *
+ */
 {
     qDebug() << "menu reset clicked";
     std::vector<Event> &events = m_Config->events();
@@ -122,6 +145,11 @@ void Icon::slotReset()
 
 
 void Icon::showUserMessage(const EventOptions& opt)
+/*
+ * Настало время какого-то таймера -
+ * время вывести сообщение на экран!
+ *
+ */
 {
     std::stringstream s;
     s << opt.name.toStdString() << "\n";
@@ -129,7 +157,8 @@ void Icon::showUserMessage(const EventOptions& opt)
 
     if (opt.message_type == EV_MSG_SYS_TRAY_MESSAGE)
     {
-        m_SysTrayIcon->showMessage("Time To Relax", s.str().c_str());
+        m_SysTrayIcon->showMessage(INFO_WINDOW_TITLE, s.str().c_str(),
+                                   QSystemTrayIcon::NoIcon, /*msec*/10000);
     }
     else if (opt.message_type == EV_MSG_MESSAGE_BOX)
     {
@@ -140,7 +169,14 @@ void Icon::showUserMessage(const EventOptions& opt)
 
         // don't destroy object, if want to mbox->show() !
         //QMessageBox *mbox = new QMessageBox(NULL);
-        mbox->setWindowTitle("Time To Relax");
+        mbox->setWindowTitle(INFO_WINDOW_TITLE);
+
+        {
+            // Добавим пробелов, чтоб окошко было покрасивше
+            std::string spacer(mbox->width() / 10, ' ');
+            s << spacer;
+        }
+
         mbox->setText(s.str().c_str());
         mbox->setWindowFlags(Qt::WindowStaysOnTopHint);
 
@@ -152,6 +188,12 @@ void Icon::showUserMessage(const EventOptions& opt)
 }
 
 void Icon::slotTimerActivation()
+/*
+ * callback, повешенный на m_Timer.
+ * Вызывается раз в 10 секунд, обсчитывает таймеры, вызывает
+ * показ сообщений, если пришло время.
+ *
+ */
 {
     QDateTime cur_time = QDateTime::currentDateTime();
 

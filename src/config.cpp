@@ -16,15 +16,15 @@
 
 #include "config.h"
 
-#define CONF_EVENT_TYPE "type"
-#define CONF_MSG_TYPE "mtype"
-#define CONF_MSG "message"
-#define CONF_NAME "name"
-#define CONF_TIMER_PERIOD "tperiod"
+#define CONF_EVENT_TYPE         "type"
+#define CONF_MSG_TYPE           "mtype"
+#define CONF_MSG                "message"
+#define CONF_NAME               "name"
+#define CONF_TIMER_PERIOD       "tperiod"
 #define CONF_TIMER_TIMEOUT_DATE "tdate"
 
-#define CONF_GROUP_EVENTS "events"
-#define CONF_GROUP_COMMON "common"
+#define CONF_GROUP_EVENTS       "events"
+#define CONF_GROUP_COMMON       "common"
 
 
 static
@@ -94,14 +94,13 @@ int Config::initEvents()
     m_Events.clear();
 
     m_Conf->beginGroup(CONF_GROUP_COMMON);
-    m_Conf->setValue("message", "just message");
-    m_Conf->setValue("sound", 0);
+    m_Conf->setValue("message", "just message");    // not used
+    m_Conf->setValue("sound", 0);                   // not used
     m_Conf->endGroup();
 
     int size = m_Conf->beginReadArray(CONF_GROUP_EVENTS);
     for (int i = 0; i < size; ++i)
     {
-        qDebug() << "read: " << i+1 << "event";
         m_Conf->setArrayIndex(i);
         EventOptions opt;
         opt.event_type = (event_t)m_Conf->value(CONF_EVENT_TYPE).toInt();
@@ -255,7 +254,8 @@ void Config::slotShowConfigDialog()
     updateDialogEvents();
 
     m_ConfigDialog->show();
-    m_ConfigDialog->setFixedWidth(m_ConfigDialog->width());
+    //m_ConfigDialog->setFixedWidth(m_ConfigDialog->width());
+    m_ConfigDialog->setMinimumWidth(m_ConfigDialog->width());
 }
 
 void Config::slotShowAddEventDialog()
@@ -444,7 +444,7 @@ void Config::addEvent(int num)
         || m_EventToAdd->getOpts().message_type == EV_MSG_NONE)
     {
         std::shared_ptr<QMessageBox> mbox (new QMessageBox(NULL));
-        mbox->setWindowTitle("Time To Relax");
+        mbox->setWindowTitle(INFO_WINDOW_TITLE);
         mbox->setText("Не заполнены все необходимые поля!");
         mbox->setWindowFlags(Qt::WindowStaysOnTopHint);
         mbox->exec();
@@ -502,7 +502,7 @@ void Config::deleteEvent(int num)
  */
 {
     std::shared_ptr<QMessageBox> mbox (new QMessageBox(NULL));
-    mbox->setWindowTitle("Time To Relax");
+    mbox->setWindowTitle(INFO_WINDOW_TITLE);
     mbox->setText("Delete event?");
     mbox->setWindowFlags(Qt::WindowStaysOnTopHint);
     mbox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
